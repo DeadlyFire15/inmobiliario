@@ -67,6 +67,13 @@
 		'Requiere mantenimiento preventivo o correctivo',
 		'Con reporte de siniestro o robo'
 	];
+	
+	// Contadores de categorías especiales
+	let specialStats = {
+		sinEtiquetado: 0,
+		malEstado: 0,
+		bajaAdministrativa: 0
+	};
 
 	// Función para obtener estadísticas de estados físicos
 	function getEstadoStats() {
@@ -121,6 +128,36 @@
 		return stats;
 	}
 
+	// Función para obtener estadísticas de categorías especiales
+	function getSpecialStats() {
+		const stats = {
+			sinEtiquetado: 0,
+			malEstado: 0,
+			bajaAdministrativa: 0
+		};
+
+		items.forEach((item) => {
+			// Contar bienes sin etiquetado o número de inventario visible (N/A o vacío)
+			const claveValue = (item.claveInventarial || '').toString().trim().toUpperCase();
+			if (claveValue === 'N/A' || claveValue === 'NA' || claveValue === '') {
+				stats.sinEtiquetado++;
+			}
+
+			// Contar bienes en mal estado de uso
+			if (item.estadoFisico === 'Malo') {
+				stats.malEstado++;
+			}
+
+			// Contar bienes en proceso de baja administrativa
+			const observacionValue = (item.observacion || '').toString().toLowerCase();
+			if (observacionValue.includes('baja')) {
+				stats.bajaAdministrativa++;
+			}
+		});
+
+		return stats;
+	}
+
 	function normalizeEstadoFisico(valor) {
 		if (!valor) return 'Bueno';
 		const valorLower = valor.toLowerCase().trim();
@@ -151,6 +188,7 @@
 		filterItems();
 		estadoStats = getEstadoStats();
 		incidenciaStats = getIncidenciaStats();
+		specialStats = getSpecialStats();
 	});
 
 	// Guardar en localStorage
@@ -341,10 +379,7 @@
 					}
 					estadoStats = getEstadoStats();
 					incidenciaStats = getIncidenciaStats();
-					importProgress = '';
-					isImporting = false;
-
-					// Mostrar resumen
+				specialStats = getSpecialStats();
 					let message = `✅ Importación completada:\n${importStats.success} registros guardados`;
 					if (importStats.errors > 0) {
 						message += `\n⚠️ ${importStats.errors} registros omitidos`;
@@ -439,6 +474,7 @@
 		saveToStorage();
 		estadoStats = getEstadoStats();
 		incidenciaStats = getIncidenciaStats();
+		specialStats = getSpecialStats();
 	}
 
 	// Editar item
@@ -456,6 +492,7 @@
 			saveToStorage();
 			estadoStats = getEstadoStats();
 			incidenciaStats = getIncidenciaStats();
+			specialStats = getSpecialStats();
 		}
 	}
 
@@ -545,33 +582,38 @@
 <div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
 	<div class="mx-auto max-w-7xl">
 		<!-- Header -->
-		<div class="mb-8">
-			<h1 class="text-4xl font-bold text-gray-900">Sistema de Inventario</h1>
-			<p class="mt-2 text-lg text-gray-600">Gestiona y organiza tu inventario de forma fácil</p>
+		<div class="mb-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-8 text-white shadow-lg">
+			<h1 class="text-4xl font-bold">📊 Sistema de Inventario Patrimonial</h1>
+			<p class="mt-2 text-lg text-blue-100">Gestión integral de bienes y activos - Sindicatura</p>
 		</div>
 
 		<!-- Estadísticas de estados físicos -->
 		{#if items.length > 0}
 			<div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-				<div class="rounded-lg bg-green-50 p-4 border border-green-200">
-					<div class="text-sm font-medium text-green-700">Total Items</div>
-					<div class="mt-2 text-3xl font-bold text-green-900">{estadoStats.total}</div>
+				<div class="rounded-lg bg-gradient-to-br from-green-50 to-green-100 p-6 border border-green-300 shadow-md hover:shadow-lg transition">
+					<div class="text-sm font-semibold text-green-700 uppercase tracking-wide">Total Items</div>
+					<div class="mt-3 text-4xl font-bold text-green-900">{estadoStats.total}</div>
+					<div class="mt-2 text-xs text-green-600">bienes registrados</div>
 				</div>
-				<div class="rounded-lg bg-blue-50 p-4 border border-blue-200">
-					<div class="text-sm font-medium text-blue-700">Bueno</div>
-					<div class="mt-2 text-3xl font-bold text-blue-900">{estadoStats.Bueno}</div>
+				<div class="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 p-6 border border-blue-300 shadow-md hover:shadow-lg transition">
+					<div class="text-sm font-semibold text-blue-700 uppercase tracking-wide">✅ Bueno</div>
+					<div class="mt-3 text-4xl font-bold text-blue-900">{estadoStats.Bueno}</div>
+					<div class="mt-2 text-xs text-blue-600">{estadoStats.total > 0 ? (estadoStats.Bueno / estadoStats.total * 100).toFixed(1) : 0}%</div>
 				</div>
-				<div class="rounded-lg bg-yellow-50 p-4 border border-yellow-200">
-					<div class="text-sm font-medium text-yellow-700">Regular</div>
-					<div class="mt-2 text-3xl font-bold text-yellow-900">{estadoStats.Regular}</div>
+				<div class="rounded-lg bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 border border-yellow-300 shadow-md hover:shadow-lg transition">
+					<div class="text-sm font-semibold text-yellow-700 uppercase tracking-wide">⚠️ Regular</div>
+					<div class="mt-3 text-4xl font-bold text-yellow-900">{estadoStats.Regular}</div>
+					<div class="mt-2 text-xs text-yellow-600">{estadoStats.total > 0 ? (estadoStats.Regular / estadoStats.total * 100).toFixed(1) : 0}%</div>
 				</div>
-				<div class="rounded-lg bg-orange-50 p-4 border border-orange-200">
-					<div class="text-sm font-medium text-orange-700">Malo</div>
-					<div class="mt-2 text-3xl font-bold text-orange-900">{estadoStats.Malo}</div>
+				<div class="rounded-lg bg-gradient-to-br from-orange-50 to-orange-100 p-6 border border-orange-300 shadow-md hover:shadow-lg transition">
+					<div class="text-sm font-semibold text-orange-700 uppercase tracking-wide">❌ Malo</div>
+					<div class="mt-3 text-4xl font-bold text-orange-900">{estadoStats.Malo}</div>
+					<div class="mt-2 text-xs text-orange-600">{estadoStats.total > 0 ? (estadoStats.Malo / estadoStats.total * 100).toFixed(1) : 0}%</div>
 				</div>
-				<div class="rounded-lg bg-red-50 p-4 border border-red-200">
-					<div class="text-sm font-medium text-red-700">Reposición</div>
-					<div class="mt-2 text-3xl font-bold text-red-900">{estadoStats['Reposición']}</div>
+				<div class="rounded-lg bg-gradient-to-br from-red-50 to-red-100 p-6 border border-red-300 shadow-md hover:shadow-lg transition">
+					<div class="text-sm font-semibold text-red-700 uppercase tracking-wide">🔄 Reposición</div>
+					<div class="mt-3 text-4xl font-bold text-red-900">{estadoStats['Reposición']}</div>
+					<div class="mt-2 text-xs text-red-600">{estadoStats.total > 0 ? (estadoStats['Reposición'] / estadoStats.total * 100).toFixed(1) : 0}%</div>
 				</div>
 			</div>
 		{/if}
@@ -610,16 +652,6 @@
 							</div>
 							
 							<div class="flex justify-between items-center p-3 bg-white rounded border border-yellow-100">
-								<span class="text-sm font-medium text-gray-700">Bienes sin etiquetado o número de inventario visible:</span>
-								<span class="text-lg font-bold text-red-600">{incidenciaStats.sinEtiquetado}</span>
-							</div>
-							
-							<div class="flex justify-between items-center p-3 bg-white rounded border border-yellow-100">
-								<span class="text-sm font-medium text-gray-700">Bienes en proceso de baja administrativa:</span>
-								<span class="text-lg font-bold text-red-600">{incidenciaStats.bajAdmin}</span>
-							</div>
-							
-							<div class="flex justify-between items-center p-3 bg-white rounded border border-yellow-100">
 								<span class="text-sm font-medium text-gray-700">Bienes en dictamen técnico para baja:</span>
 								<span class="text-lg font-bold text-red-600">{incidenciaStats.bajDictamen}</span>
 							</div>
@@ -647,6 +679,21 @@
 							<div class="flex justify-between items-center p-3 bg-white rounded border border-yellow-100">
 								<span class="text-sm font-medium text-gray-700">Bienes con reporte de siniestro o robo:</span>
 								<span class="text-lg font-bold text-red-600">{incidenciaStats.siniestro}</span>
+							</div>
+							
+							<div class="flex justify-between items-center p-3 bg-white rounded border border-red-100">
+								<span class="text-sm font-medium text-gray-700">Bienes sin etiquetado o número de inventario visible (clave vacía):</span>
+								<span class="text-lg font-bold text-red-600">{specialStats.sinEtiquetado}</span>
+							</div>
+							
+							<div class="flex justify-between items-center p-3 bg-white rounded border border-red-100">
+								<span class="text-sm font-medium text-gray-700">Bienes en mal estado de uso:</span>
+								<span class="text-lg font-bold text-red-600">{specialStats.malEstado}</span>
+							</div>
+							
+							<div class="flex justify-between items-center p-3 bg-white rounded border border-red-100">
+								<span class="text-sm font-medium text-gray-700">Bienes en proceso de baja administrativa:</span>
+								<span class="text-lg font-bold text-red-600">{specialStats.bajaAdministrativa}</span>
 							</div>
 						</div>
 					</div>
@@ -1026,30 +1073,84 @@
 		{/if}
 
 		<!-- Filtros por Área -->
-		<div class="mb-8 rounded-lg bg-white p-6 shadow-lg">
-			<h2 class="mb-4 text-xl font-bold text-gray-900">Filtrar por Área</h2>
-
-			<div>
-				<label class="block text-sm font-medium text-gray-700">Selecciona un área</label>
-				<select
-					bind:value={selectedArea}
-					class="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+		<div class="mb-8 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-6 shadow-md border border-blue-200">
+			<div class="flex items-center justify-between mb-4">
+				<h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+					🔍 Filtrar Inventario
+				</h2>
+				<button
+					on:click={() => {
+						selectedArea = 'Todas';
+						filterValues = {};
+					}}
+					class="text-sm px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
 				>
-					<option value="Todas">Todas las Áreas</option>
-					{#each areas as area}
-						<option value={area}>{area}</option>
-					{/each}
-				</select>
+					Limpiar Filtros
+				</button>
 			</div>
 
-			<div class="mt-4 text-sm text-gray-600">
-				Mostrando <span class="font-semibold">{filteredItems.length}</span> de
-				<span class="font-semibold">{items.length}</span> items
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-2">Área Administrativa</label>
+					<select
+						bind:value={selectedArea}
+						class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition bg-white"
+					>
+						<option value="Todas">Todas las Áreas</option>
+						{#each areas as area}
+							<option value={area}>{area}</option>
+						{/each}
+					</select>
+				</div>
+
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+					<input
+						type="text"
+						bind:value={filterValues.descripcion}
+						placeholder="Buscar descripción..."
+						class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition"
+					/>
+				</div>
+
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-2">Clave Inventarial</label>
+					<input
+						type="text"
+						bind:value={filterValues.claveInventarial}
+						placeholder="Buscar clave..."
+						class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition"
+					/>
+				</div>
+
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-2">Estado Físico</label>
+					<select
+						bind:value={filterValues.estadoFisico}
+						class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition bg-white"
+					>
+						<option value="">Todos los estados</option>
+						<option value="Bueno">Bueno</option>
+						<option value="Regular">Regular</option>
+						<option value="Malo">Malo</option>
+						<option value="Reposición">Reposición</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="mt-4 flex items-center justify-between text-sm text-gray-700 bg-white rounded-lg p-3 border border-blue-100">
+				<div>
+					<span class="font-semibold text-blue-900">{filteredItems.length}</span> de
+					<span class="font-semibold text-blue-900">{items.length}</span> bienes mostrados
+				</div>
+				{#if filteredItems.length === 0 && items.length > 0}
+					<span class="text-orange-600 font-medium">Sin resultados - ajusta los filtros</span>
+				{/if}
 			</div>
 		</div>
 
 		<!-- Tabla de datos -->
-		<div class="overflow-hidden rounded-lg bg-white shadow-lg">
+		<div class="rounded-lg bg-white shadow-lg border border-gray-200 overflow-hidden">
 			{#if filteredItems.length === 0}
 				<div class="px-6 py-12 text-center">
 					<p class="text-gray-500">No hay items que mostrar. Agrega el primero.</p>
@@ -1075,28 +1176,11 @@
 								<th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Observación</th>
 								<th class="px-4 py-3 text-center text-sm font-semibold text-gray-900">Acciones</th>
 							</tr>
-							<tr class="border-b bg-gray-50">
-								<th class="px-4 py-2"><input type="text" bind:value={filterValues.numero} placeholder="N°" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-							<th class="px-4 py-2"><input type="text" bind:value={filterValues.area} placeholder="Categoría" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-							<th class="px-4 py-2"><input type="text" bind:value={filterValues.areaAdscripcion} placeholder="Área Ads." class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-								<th class="px-4 py-2"><input type="text" bind:value={filterValues.descripcion} placeholder="Descripción" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-								<th class="px-4 py-2"><input type="text" bind:value={filterValues.unidadMedida} placeholder="Unidad" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-								<th class="px-4 py-2"><input type="text" bind:value={filterValues.claveInventarial} placeholder="Clave" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-								<th class="px-4 py-2"><input type="text" bind:value={filterValues.resguardatario} placeholder="Resguardatario" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-								<th class="px-4 py-2"><input type="text" bind:value={filterValues.marca} placeholder="Marca" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-								<th class="px-4 py-2"><input type="text" bind:value={filterValues.modelo} placeholder="Modelo" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-								<th class="px-4 py-2"><input type="text" bind:value={filterValues.numSerie} placeholder="Serie" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-								<th class="px-4 py-2"><input type="text" bind:value={filterValues.estadoFisico} placeholder="Estado" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-								<th class="px-4 py-2"><input type="text" bind:value={filterValues.tipoIncidencia} placeholder="Incidencia" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-								<th class="px-4 py-2"><input type="text" bind:value={filterValues.valorEstimado} placeholder="Valor" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-								<th class="px-4 py-2"><input type="text" bind:value={filterValues.observacion} placeholder="Observación" class="text-xs w-full px-2 py-1 rounded border border-gray-300" /></th>
-								<th></th>
-							</tr>
 						</thead>
 						<tbody>
 							{#each filteredItems as item (item.id)}
-								<tr class="border-b hover:bg-gray-50">
-									<td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{item.numero}</td>
+								<tr class="border-b hover:bg-blue-50 transition">
+									<td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">{item.numero}</td>
 									<td class="whitespace-nowrap px-4 py-3 text-sm">
 										<span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
 											{item.area}
