@@ -47,7 +47,8 @@
 		sinModelo: 0,
 		conSerie: 0,
 		sinSerie: 0,
-		equipos: 0
+		equipos: 0,
+		piezas: 0
 	};
 	const tiposIncidencias = [
 		'Ninguno',
@@ -86,7 +87,8 @@
 			sinModelo: 0,
 			conSerie: 0,
 			sinSerie: 0,
-			equipos: 0
+			equipos: 0,
+			piezas: 0
 		};
 
 		items.forEach((item) => {
@@ -114,9 +116,14 @@
 				stats.conSerie++;
 			}
 			
-			// Contar equipos
-			if ((item.unidadMedida || '').toString().trim().toLowerCase() === 'equipo') {
-				stats.equipos++;
+			// Contar equipos y piezas (suma la cantidad según lo que diga la unidad)
+			const unidadValue = (item.unidadMedida || '').toString().trim().toLowerCase();
+			if (unidadValue.includes('equipo')) {
+				const quantity = extractQuantity(item.unidadMedida);
+				stats.equipos += quantity;
+			} else if (unidadValue.includes('pz')) {
+				const quantity = extractQuantity(item.unidadMedida);
+				stats.piezas += quantity;
 			}
 		});
 
@@ -165,6 +172,13 @@
 			return valor.charAt(0).toUpperCase() + valor.slice(1).toLowerCase();
 		}
 		return 'Bueno'; // Por defecto
+	}
+
+	// Función auxiliar para extraer cantidad numérica de un texto
+	function extractQuantity(text) {
+		const trimmed = (text || '').toString().trim();
+		const match = trimmed.match(/^(\d+)/);
+		return match ? parseInt(match[1], 10) : 1;
 	}
 
 	// Cargar datos del localStorage
@@ -683,6 +697,17 @@
 							<div class="flex justify-between items-center p-3 bg-white rounded border border-orange-100">
 								<span class="text-sm font-medium text-gray-700">📊 Total de Equipos (Unidad = Equipo):</span>
 								<span class="text-lg font-bold text-orange-700">{incidenciaStats.equipos}</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Información de Piezas -->
+					<div class="rounded-lg bg-red-50 p-6 border border-red-200">
+						<p class="text-lg font-bold text-gray-900 mb-4">📦 Información de Piezas:</p>
+						<div class="space-y-3 ml-4">
+							<div class="flex justify-between items-center p-3 bg-white rounded border border-red-100">
+								<span class="text-sm font-medium text-gray-700">📊 Total de Piezas (Unidad = Pz):</span>
+								<span class="text-lg font-bold text-red-700">{incidenciaStats.piezas}</span>
 							</div>
 						</div>
 					</div>
