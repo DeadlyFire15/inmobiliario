@@ -41,31 +41,19 @@
 	const estadosFisicos = ['Bueno', 'Regular', 'Malo', 'Reposición'];
 	let incidenciaStats = {
 		total: 0,
-		adecuados: 0,
-		conIncidencias: 0,
-		noLocalizados: 0,
-		sinResguardo: 0,
-		sinEtiquetado: 0,
-		bajAdmin: 0,
-		bajDictamen: 0,
-		transferencia: 0,
-		malEstado: 0,
-		inservibles: 0,
-		mantenimiento: 0,
-		siniestro: 0
+		conMarca: 0,
+		sinMarca: 0,
+		conModelo: 0,
+		sinModelo: 0,
+		conSerie: 0,
+		sinSerie: 0,
+		equipos: 0
 	};
 	const tiposIncidencias = [
 		'Ninguno',
-		'No localizado o extraviado',
-		'Sin resguardo firmado',
-		'Sin etiquetado o número de inventario visible',
-		'En proceso de baja administrativa',
-		'En dictamen técnico para baja',
-		'En trámite de transferencia a otra área',
-		'En mal estado de uso',
-		'Inservible o irreparable',
-		'Requiere mantenimiento preventivo o correctivo',
-		'Con reporte de siniestro o robo'
+		'Bienes sin marca',
+		'Bienes sin modelo',
+		'Bienes sin serie'
 	];
 	
 	// Contadores de categorías especiales
@@ -92,36 +80,43 @@
 	function getIncidenciaStats() {
 		const stats = {
 			total: items.length,
-			adecuados: 0,
-			conIncidencias: 0,
-			noLocalizados: 0,
-			sinResguardo: 0,
-			sinEtiquetado: 0,
-			bajAdmin: 0,
-			bajDictamen: 0,
-			transferencia: 0,
-			malEstado: 0,
-			inservibles: 0,
-			mantenimiento: 0,
-			siniestro: 0
+			conMarca: 0,
+			sinMarca: 0,
+			conModelo: 0,
+			sinModelo: 0,
+			conSerie: 0,
+			sinSerie: 0,
+			equipos: 0
 		};
 
 		items.forEach((item) => {
-			const incidencia = item.tipoIncidencia || 'Ninguno';
-			if (incidencia === 'Ninguno') {
-				stats.adecuados++;
+			// Contar marca (S/M = sin marca)
+			const marcaValue = (item.marca || '').toString().trim().toUpperCase();
+			if (marcaValue === 'S/M' || marcaValue === '' || marcaValue === 'N/A') {
+				stats.sinMarca++;
 			} else {
-				stats.conIncidencias++;
-				if (incidencia === 'No localizado o extraviado') stats.noLocalizados++;
-				else if (incidencia === 'Sin resguardo firmado') stats.sinResguardo++;
-				else if (incidencia === 'Sin etiquetado o número de inventario visible') stats.sinEtiquetado++;
-				else if (incidencia === 'En proceso de baja administrativa') stats.bajAdmin++;
-				else if (incidencia === 'En dictamen técnico para baja') stats.bajDictamen++;
-				else if (incidencia === 'En trámite de transferencia a otra área') stats.transferencia++;
-				else if (incidencia === 'En mal estado de uso') stats.malEstado++;
-				else if (incidencia === 'Inservible o irreparable') stats.inservibles++;
-				else if (incidencia === 'Requiere mantenimiento preventivo o correctivo') stats.mantenimiento++;
-				else if (incidencia === 'Con reporte de siniestro o robo') stats.siniestro++;
+				stats.conMarca++;
+			}
+			
+			// Contar modelo (S/M = sin modelo)
+			const modeloValue = (item.modelo || '').toString().trim().toUpperCase();
+			if (modeloValue === 'S/M' || modeloValue === '' || modeloValue === 'N/A') {
+				stats.sinModelo++;
+			} else {
+				stats.conModelo++;
+			}
+			
+			// Contar serie (S/N = sin número de serie)
+			const serieValue = (item.numSerie || '').toString().trim().toUpperCase();
+			if (serieValue === 'S/N' || serieValue === '' || serieValue === 'N/A') {
+				stats.sinSerie++;
+			} else {
+				stats.conSerie++;
+			}
+			
+			// Contar equipos
+			if ((item.unidadMedida || '').toString().trim().toLowerCase() === 'equipo') {
+				stats.equipos++;
 			}
 		});
 
@@ -628,72 +623,85 @@
 					<div class="rounded-lg bg-blue-50 p-6 border border-blue-200">
 						<div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
 							<div>
-								<p class="text-sm font-medium text-gray-700 mb-2">De un total de <span class="text-2xl font-bold text-blue-900">{incidenciaStats.total}</span> bienes registrados en el inventario patrimonial de esta Unidad Administrativa:</p>
+								<p class="text-sm font-medium text-gray-700 mb-2">De un total de <span class="text-2xl font-bold text-blue-900">{incidenciaStats.total}</span> bienes registrados en el inventario patrimonial de esta Unidad Administrativa</p>
 							</div>
 							<div>
-								<p class="text-sm font-medium text-gray-700 mb-2"><span class="text-2xl font-bold text-green-700">{incidenciaStats.adecuados}</span> bienes se encuentran en condiciones adecuadas de uso.</p>
+								<p class="text-sm font-medium text-gray-700 mb-2">Se encuentran distribuidos según su información de identificación:</p>
 							</div>
 						</div>
 					</div>
 
-					<!-- Bienes con Incidencias -->
+					<!-- Información de Marca -->
+					<div class="rounded-lg bg-green-50 p-6 border border-green-200">
+						<p class="text-lg font-bold text-gray-900 mb-4">📍 Información de Marca:</p>
+						<div class="space-y-3 ml-4">
+							<div class="flex justify-between items-center p-3 bg-white rounded border border-green-100">
+								<span class="text-sm font-medium text-gray-700">✅ Bienes CON marca:</span>
+								<span class="text-lg font-bold text-green-700">{incidenciaStats.conMarca}</span>
+							</div>
+							<div class="flex justify-between items-center p-3 bg-white rounded border border-red-100">
+								<span class="text-sm font-medium text-gray-700">❌ Bienes SIN marca (S/M):</span>
+								<span class="text-lg font-bold text-red-600">{incidenciaStats.sinMarca}</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Información de Modelo -->
+					<div class="rounded-lg bg-blue-50 p-6 border border-blue-200">
+						<p class="text-lg font-bold text-gray-900 mb-4">📍 Información de Modelo:</p>
+						<div class="space-y-3 ml-4">
+							<div class="flex justify-between items-center p-3 bg-white rounded border border-green-100">
+								<span class="text-sm font-medium text-gray-700">✅ Bienes CON modelo:</span>
+								<span class="text-lg font-bold text-green-700">{incidenciaStats.conModelo}</span>
+							</div>
+							<div class="flex justify-between items-center p-3 bg-white rounded border border-red-100">
+								<span class="text-sm font-medium text-gray-700">❌ Bienes SIN modelo (S/M):</span>
+								<span class="text-lg font-bold text-red-600">{incidenciaStats.sinModelo}</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Información de Serie -->
+					<div class="rounded-lg bg-purple-50 p-6 border border-purple-200">
+						<p class="text-lg font-bold text-gray-900 mb-4">📍 Información de Serie:</p>
+						<div class="space-y-3 ml-4">
+							<div class="flex justify-between items-center p-3 bg-white rounded border border-green-100">
+								<span class="text-sm font-medium text-gray-700">✅ Bienes CON serie:</span>
+								<span class="text-lg font-bold text-green-700">{incidenciaStats.conSerie}</span>
+							</div>
+							<div class="flex justify-between items-center p-3 bg-white rounded border border-red-100">
+								<span class="text-sm font-medium text-gray-700">❌ Bienes SIN serie (S/N):</span>
+								<span class="text-lg font-bold text-red-600">{incidenciaStats.sinSerie}</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Información de Equipos -->
+					<div class="rounded-lg bg-orange-50 p-6 border border-orange-200">
+						<p class="text-lg font-bold text-gray-900 mb-4">🖥️ Información de Equipos:</p>
+						<div class="space-y-3 ml-4">
+							<div class="flex justify-between items-center p-3 bg-white rounded border border-orange-100">
+								<span class="text-sm font-medium text-gray-700">📊 Total de Equipos (Unidad = Equipo):</span>
+								<span class="text-lg font-bold text-orange-700">{incidenciaStats.equipos}</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Otros contadores especiales -->
 					<div class="rounded-lg bg-yellow-50 p-6 border border-yellow-200">
-						<p class="text-lg font-bold text-gray-900 mb-4"><span class="text-2xl text-yellow-700">{incidenciaStats.conIncidencias}</span> bienes presentan las siguientes incidencias:</p>
-						
+						<p class="text-lg font-bold text-gray-900 mb-4">⚠️ Otros Contadores Especiales:</p>
 						<div class="space-y-3 ml-4">
 							<div class="flex justify-between items-center p-3 bg-white rounded border border-yellow-100">
-								<span class="text-sm font-medium text-gray-700">Bienes no localizados o extraviados:</span>
-								<span class="text-lg font-bold text-red-600">{incidenciaStats.noLocalizados}</span>
+								<span class="text-sm font-medium text-gray-700">Bienes sin etiquetado (clave vacía):</span>
+								<span class="text-lg font-bold text-yellow-700">{specialStats.sinEtiquetado}</span>
 							</div>
-							
-							<div class="flex justify-between items-center p-3 bg-white rounded border border-yellow-100">
-								<span class="text-sm font-medium text-gray-700">Bienes sin resguardo firmado:</span>
-								<span class="text-lg font-bold text-red-600">{incidenciaStats.sinResguardo}</span>
-							</div>
-							
-							<div class="flex justify-between items-center p-3 bg-white rounded border border-yellow-100">
-								<span class="text-sm font-medium text-gray-700">Bienes en dictamen técnico para baja:</span>
-								<span class="text-lg font-bold text-red-600">{incidenciaStats.bajDictamen}</span>
-							</div>
-							
-							<div class="flex justify-between items-center p-3 bg-white rounded border border-yellow-100">
-								<span class="text-sm font-medium text-gray-700">Bienes en trámite de transferencia a otra área:</span>
-								<span class="text-lg font-bold text-red-600">{incidenciaStats.transferencia}</span>
-							</div>
-							
 							<div class="flex justify-between items-center p-3 bg-white rounded border border-yellow-100">
 								<span class="text-sm font-medium text-gray-700">Bienes en mal estado de uso:</span>
-								<span class="text-lg font-bold text-red-600">{incidenciaStats.malEstado}</span>
+								<span class="text-lg font-bold text-yellow-700">{specialStats.malEstado}</span>
 							</div>
-							
 							<div class="flex justify-between items-center p-3 bg-white rounded border border-yellow-100">
-								<span class="text-sm font-medium text-gray-700">Bienes inservibles o irreparables:</span>
-								<span class="text-lg font-bold text-red-600">{incidenciaStats.inservibles}</span>
-							</div>
-							
-							<div class="flex justify-between items-center p-3 bg-white rounded border border-yellow-100">
-								<span class="text-sm font-medium text-gray-700">Bienes que requieren mantenimiento preventivo o correctivo:</span>
-								<span class="text-lg font-bold text-red-600">{incidenciaStats.mantenimiento}</span>
-							</div>
-							
-							<div class="flex justify-between items-center p-3 bg-white rounded border border-yellow-100">
-								<span class="text-sm font-medium text-gray-700">Bienes con reporte de siniestro o robo:</span>
-								<span class="text-lg font-bold text-red-600">{incidenciaStats.siniestro}</span>
-							</div>
-							
-							<div class="flex justify-between items-center p-3 bg-white rounded border border-red-100">
-								<span class="text-sm font-medium text-gray-700">Bienes sin etiquetado o número de inventario visible (clave vacía):</span>
-								<span class="text-lg font-bold text-red-600">{specialStats.sinEtiquetado}</span>
-							</div>
-							
-							<div class="flex justify-between items-center p-3 bg-white rounded border border-red-100">
-								<span class="text-sm font-medium text-gray-700">Bienes en mal estado de uso:</span>
-								<span class="text-lg font-bold text-red-600">{specialStats.malEstado}</span>
-							</div>
-							
-							<div class="flex justify-between items-center p-3 bg-white rounded border border-red-100">
 								<span class="text-sm font-medium text-gray-700">Bienes en proceso de baja administrativa:</span>
-								<span class="text-lg font-bold text-red-600">{specialStats.bajaAdministrativa}</span>
+								<span class="text-lg font-bold text-yellow-700">{specialStats.bajaAdministrativa}</span>
 							</div>
 						</div>
 					</div>
